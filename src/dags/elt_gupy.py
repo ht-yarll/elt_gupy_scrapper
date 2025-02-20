@@ -6,7 +6,8 @@ This dag scrape data from an URL and load it to a bucket on storage for further 
 from airflow import Dataset
 from airflow.decorators import dag, task
 from pendulum import datetime
-import pandas as pd
+
+from typing import List, Dict, Any
 import requests
 
 # config = load_config()
@@ -24,11 +25,14 @@ def elt_gupy():
 #Execution --------------------------------------------------------------------------
 
     @task
-    def extract():
+    def extract() -> List[Dict[str, Any]]:
+        # Extract jobs list from a Gupy URL
+
         offset = 0
         all_data = []
         label = 'python'
         print(f'Fetching data for {label}...')
+
         try:
             while True:
                 url_template = (
@@ -47,42 +51,15 @@ def elt_gupy():
 
                 offset += 10
             
-            result = pd.DataFrame(all_data)
+            result = all_data
             print('All data fetched with success')
             return result
            
         except Exception as e:
             print(f'Failed to fetch data: {e}')
-            return pd.DataFrame()
+            return []
         
-    @task
-    def normalize_data():
-        df = extract()
-        try:
-            print('Treating data...')
-            df.columns = (
-                df.columns
-                .str.strip()
-                .str.lower()
-                .str.replace(r"[^a-z0-9_]", "_", regex=True)
 
-            )
-            df = df.map(
-            lambda x: str(x) if isinstance(x, dict) else x
-        )
-            df = df.fillna({
-                col: "N/A" if df[col].dtype == "object" else 0
-                for col in df.columns
-            })
-            df = df.drop_duplicates()
-            df = df.convert_dtypes()
-            
-        except Exception as e:
-            print(f'Error during treating data: {e}')
-
-        return df
-
-
-    extract() >> normalize_data()
+    extract() >> 
     
 elt_gupy()    
