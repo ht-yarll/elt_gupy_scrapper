@@ -1,0 +1,10 @@
+project_name: "blackstone"
+bucket_name: "elt_gupy_scrapper"
+project_directory: "elt_gupy_scrapper"
+labels: 
+  - "python"
+
+raw:
+
+bronze:
+  layer: bronze
