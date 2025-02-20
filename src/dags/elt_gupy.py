@@ -2,6 +2,8 @@
 This dag scrape data from an URL and load it to a bucket on storage for further transformation
 """
 # from utils.load_config import load_config
+from typing import List, Dict, Any
+import json
 
 from airflow import Dataset
 from airflow.decorators import dag, task
@@ -50,16 +52,19 @@ def elt_gupy():
                 response = requests.get(url_template)
                 data = response.json()
                 
-                for i in data['data']:
-                    all_data.append(i)
+                all_data.extend(data['data'])
 
                 if not data['data']:
                     break
 
                 offset += 10
-            
+
             result = all_data
-            print('All data fetched with success')
+
+            output_file = '/home/ht-yarll/Documents/vscode/estudo/py/elt_gupy_scrapper/data'
+            with open(output_file, 'w', encoding='utf-8') as f:
+                json.dump(all_data, f, ensure_ascii=False, indent=4)
+            print(f'All data fetched with success and saved to {output_file}')
             return result
            
         except Exception as e:
@@ -86,7 +91,7 @@ def elt_gupy():
                 bucket='elt_gupy_scrapper',  # Replace with your bucket name
                 source_objects=['all_data.json'],  # Path to your file in the bucket
                 destination_project_dataset_table='blackstone-446301.elt_gupy_scrapper.all_data_raw',  # Replace with your project, dataset, and table name
-                source_format='JSON', 
+                source_format='NEWLINE_DELIMITED_JSON', 
                 allow_jagged_rows=True,
                 ignore_unknown_values=True,
                 write_disposition='WRITE_APPEND',  # Options: WRITE_TRUNCATE, WRITE_APPEND, WRITE_EMPTY
