@@ -8,7 +8,6 @@ from airflow.decorators import dag, task
 from airflow.providers.google.cloud.sensors.gcs import GCSObjectExistenceSensor
 from airflow.providers.google.cloud.transfers.gcs_to_bigquery import GCSToBigQueryOperator
 
-import pandas as pd
 import requests
 from datetime import datetime
 
@@ -73,7 +72,7 @@ def elt_gupy():
         check_file = GCSObjectExistenceSensor(
             task_id='check_file_exists',
             bucket='elt_gupy_scrapper',  # Replace with your bucket name
-            object='all_data.parquet',  # Replace with the file path in the bucket
+            object='all_data.json',  # Replace with the file path in the bucket
             timeout=300,  # Maximum wait time in seconds
             poke_interval=30,  # Time interval in seconds to check again
             mode='poke',  # Use 'poke' mode for synchronous checking
@@ -85,9 +84,9 @@ def elt_gupy():
         upload_file = GCSToBigQueryOperator(
                 task_id='load_parquet_to_bq',
                 bucket='elt_gupy_scrapper',  # Replace with your bucket name
-                source_objects=['all_data.parquet'],  # Path to your file in the bucket
+                source_objects=['all_data.json'],  # Path to your file in the bucket
                 destination_project_dataset_table='blackstone-446301.elt_gupy_scrapper.all_data_raw',  # Replace with your project, dataset, and table name
-                source_format='Parquet', 
+                source_format='JSON', 
                 allow_jagged_rows=True,
                 ignore_unknown_values=True,
                 write_disposition='WRITE_APPEND',  # Options: WRITE_TRUNCATE, WRITE_APPEND, WRITE_EMPTY
