@@ -61,10 +61,14 @@ def elt_gupy():
 
             result = all_data
 
-            output_file = '/home/ht-yarll/Documents/vscode/estudo/py/elt_gupy_scrapper/data'
-            with open(output_file, 'w', encoding='utf-8') as f:
-                json.dump(all_data, f, ensure_ascii=False, indent=4)
-            print(f'All data fetched with success and saved to {output_file}')
+            try:
+                output_file = './all_data.json'
+                with open(output_file, 'w', encoding='utf-8') as f:
+                    json.dump(all_data, f, ensure_ascii=False, indent=4)
+                    print(f'All data fetched successfully and saved to {output_file}')
+            except IOError as e:
+                print(f'Failed to save data to file: {e}')
+
             return result
            
         except Exception as e:
