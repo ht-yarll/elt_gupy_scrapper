@@ -33,11 +33,14 @@ def elt_gupy():
 #Execution --------------------------------------------------------------------------
 
     @task
-    def extract() -> pd.DataFrame:
+    def extract() -> List[Dict[str, Any]]:
+        # Extract jobs list from a Gupy URL
+
         offset = 0
         all_data = []
         label = 'python'
         print(f'Fetching data for {label}...')
+
         try:
             while True:
                 url_template = (
@@ -56,41 +59,13 @@ def elt_gupy():
 
                 offset += 10
             
-            result = pd.DataFrame(all_data)
+            result = all_data
             print('All data fetched with success')
-            print (result)
             return result
            
         except Exception as e:
             print(f'Failed to fetch data: {e}')
-            return pd.DataFrame()
-        
-    @task
-    def normalize_data():
-        dataframe = extract()
-        try:
-            print('Treating data...')
-            dataframe.columns = (
-                dataframe.columns
-                .str.strip()
-                .str.lower()
-                .str.replace(r"[^a-z0-9_]", "_", regex=True)
-
-            )
-            dataframe = dataframe.map(
-            lambda x: str(x) if isinstance(x, dict) else x
-        )
-            dataframe = dataframe.fillna({
-                col: "N/A" if df[col].dtype == "object" else 0
-                for col in df.columns
-            })
-            df = dataframe.drop_duplicates()
-            df = df.convert_dtypes()
-            
-        except Exception as e:
-            print(f'Error during treating data: {e}')
-
-        return df
+            return []
     
     @task
     def check_if_file_exists():
@@ -124,6 +99,6 @@ def elt_gupy():
         )
 
 
-    [extract() >> normalize_data()] >> check_if_file_exists() >> upload_file_to_gcs()
+    extract() >> check_if_file_exists() >> upload_file_to_gcs()
 
 elt_gupy()
