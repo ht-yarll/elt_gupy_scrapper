@@ -1,5 +1,12 @@
 project_name: "blackstone"
-bucket_name: "elt_gupy_scrapper"
 project_directory: "elt_gupy_scrapper"
+dataset_id: blackstone-446301.elt_gupy_scrapper
+
 labels: 
   - "python"
+
+
+storage:
+  - bucket_name: elt_gupy_scrapper
+  - bucket_url: https://console.cloud.google.com/storage/browser/elt_gupy_scrapper
+  - bucket_uri: gs://elt_gupy_scrapper
