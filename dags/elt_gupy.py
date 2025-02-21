@@ -34,8 +34,8 @@ default_args = {
     tags = ["elt"]
 )
 def elt_gupy():
-#Execution --------------------------------------------------------------------------
 
+#Execution --------------------------------------------------------------------------
     @task
     def extract() -> List[Dict[str, Any]]:
         """
@@ -56,25 +56,23 @@ def elt_gupy():
 
                 response = requests.get(url_template)
                 data = response.json()
-                
-                all_data.extend(data['data'])
 
                 if not data['data']:
                     break
 
+                all_data.extend(data['data'])
                 offset += 10
-
-            result = all_data
 
             local_file = f"/tmp/all_jobs.json"
             with open(local_file, "w", encoding="utf-8") as f:
-                json.dump(all_data, f, ensure_ascii=False, indent=4)
+                for job in all_data:
+                    f.write(json.dumps(job, ensure_ascii=False) + "\n")
 
             return local_file
            
         except Exception as e:
             print(f'Failed to fetch data: {e}')
-            return []
+            return ""
 
 
 
@@ -99,6 +97,7 @@ def elt_gupy():
             blob.upload_from_filename(local_file)
 
             print(f"File {local_file} uploaded to {bucket_name}/{destination_blob_name}.")
+
         except Exception as e:
             print(f"Error uploading file {local_file}: {e}")
 
@@ -108,20 +107,24 @@ def elt_gupy():
         """
         Create a stage table from raw data loaded to gcs in BigQuery
         """
-
+        job_config = bigquery.LoadJobConfig(
+                    source_format = bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
+                    autodetect = True,
+                    write_disposition = bigquery.WriteDisposition.WRITE_TRUNCATE
+                )
         uri = f"{config['storage']['bucket_uri']}/all_jobs.json"
         table_name = config['BigQuery']['bronze']['table_name']
 
         try:
             bq_client = bigquery.Client()
-            bq_client.load_table_from_uri(
-                source_uris = uri,
+            load_job = bq_client.load_table_from_uri(
+                source_uris = [uri],
                 destination = table_name,
-                job_config = bigquery.LoadJobConfig(
-                    source_format = bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
-                    autodetect = True
-                )
+                job_config = job_config
             )
+
+            load_job.result()
+
         except Exception as e:
             print(f"Error creating table: {e}")
         
