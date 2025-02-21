@@ -1,7 +1,7 @@
 """
 This dag scrape data from an URL and load it to a bucket on storage for further transformation
 """
-from utils.load_config import load_config
+from utils.load_config import config
 from typing import List, Dict, Any
 import json
 
@@ -16,7 +16,7 @@ from google.cloud import storage
 import requests
 from datetime import datetime
 
-config = load_config()
+
 
 default_args = {
     "owner": "astro",

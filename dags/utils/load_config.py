@@ -7,3 +7,5 @@ def load_config() -> Dict[str, Any]:
         config = yaml.safe_load(file)
 
     return config
+
+config = load_config()

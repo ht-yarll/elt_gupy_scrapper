@@ -1,0 +1,6 @@
+services:
+  airflow:
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/usr/local/airflow/include/keys/astro_test.json
+    volumes:
+      - ./include/keys/astro_test.json:/usr/local/airflow/include/keys/astro_test.json
