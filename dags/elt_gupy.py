@@ -11,7 +11,7 @@ from airflow.providers.google.cloud.sensors.gcs import GCSObjectExistenceSensor
 from airflow.providers.google.cloud.transfers.local_to_gcs import LocalFilesystemToGCSOperator
 from airflow.providers.google.cloud.transfers.gcs_to_bigquery import GCSToBigQueryOperator
 
-from google.cloud import storage
+from google.cloud import storage, bigquery
 
 import requests
 from datetime import datetime
@@ -38,7 +38,9 @@ def elt_gupy():
 
     @task
     def extract() -> List[Dict[str, Any]]:
-        # Extract jobs list from a Gupy URL
+        """
+        Extract jobs list from a Gupy URL and parse it to json
+        """
 
         offset = 0
         all_data = []
@@ -78,7 +80,10 @@ def elt_gupy():
 
     @task
     def load_raw_to_gcs(local_file: str) -> None:
-        # Load data .json to GCS
+        """
+        Load the extracted data .json to GCS
+        """
+
         if not local_file:
             print("No file to upload.")
             return
@@ -100,10 +105,27 @@ def elt_gupy():
 
     @task
     def create_table_bronze() -> None:
-        # Create table in BigQuery
-        ...
+        """
+        Create a stage table from raw data loaded to gcs in BigQuery
+        """
+
+        uri = f"{config['storage']['bucket_uri']}/all_jobs.json"
+        table_name = config['BigQuery']['bronze']['table_name']
+
+        try:
+            bq_client = bigquery.Client()
+            bq_client.load_table_from_uri(
+                source_uris = uri,
+                destination = table_name,
+                job_config = bigquery.LoadJobConfig(
+                    source_format = bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
+                    autodetect = True
+                )
+            )
+        except Exception as e:
+            print(f"Error creating table: {e}")
         
     
-    load_raw_to_gcs(extract())
+    load_raw_to_gcs(extract()) >> create_table_bronze()
 
 elt_gupy()

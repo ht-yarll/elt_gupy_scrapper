@@ -11,3 +11,17 @@ storage:
     bucket_url: https://console.cloud.google.com/storage/browser/elt_gupy_scrapper,
     bucket_uri: gs://elt_gupy_scrapper
 }
+
+BigQuery: {
+  bronze: {
+    table_name: blackstone-446301.elt_gupy_scrapper.bronze_dataset_gupy,
+  },
+
+  silver: {
+
+  },
+
+  gold: {
+    
+  }
+}
