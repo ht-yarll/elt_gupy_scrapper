@@ -97,6 +97,7 @@ def elt_gupy():
         except Exception as e:
             print(f"Error uploading file {local_file}: {e}")
 
+
     @task
     def create_table_bronze() -> None:
         # Create table in BigQuery
