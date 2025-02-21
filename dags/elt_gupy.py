@@ -36,6 +36,8 @@ default_args = {
 def elt_gupy():
 
 #Execution --------------------------------------------------------------------------
+
+#EXTRACT ----------------------------------------------------------------------------
     @task
     def extract() -> List[Dict[str, Any]]:
         """
@@ -75,7 +77,7 @@ def elt_gupy():
             return ""
 
 
-
+#LOAD --------------------------------------------------------------------------
     @task
     def load_raw_to_gcs(local_file: str) -> None:
         """
@@ -103,17 +105,17 @@ def elt_gupy():
 
 
     @task
-    def create_table_bronze() -> None:
+    def create_bronze_table() -> None:
         """
         Create a stage table from raw data loaded to gcs in BigQuery
         """
+        uri = f"{config['storage']['bucket_uri']}/all_jobs.json"
+        table_name = config['BigQuery']['bronze']['table_name']
         job_config = bigquery.LoadJobConfig(
                     source_format = bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
                     autodetect = True,
                     write_disposition = bigquery.WriteDisposition.WRITE_TRUNCATE
                 )
-        uri = f"{config['storage']['bucket_uri']}/all_jobs.json"
-        table_name = config['BigQuery']['bronze']['table_name']
 
         try:
             bq_client = bigquery.Client()
@@ -127,8 +129,22 @@ def elt_gupy():
 
         except Exception as e:
             print(f"Error creating table: {e}")
+
+#TRANSFORM --------------------------------------------------------------------------
+    @task
+    def create_silver_table() -> None:
+        try:
+            bq_client = bigquery.Client()
+            load_job = bq_client.query(
+                query = config['BigQuery']['silver']['query']
+            )
+
+            load_job.result()
+
+        except Exception as e:
+            print (f"Error during query: {(e)}")
         
-    
-    load_raw_to_gcs(extract()) >> create_table_bronze()
+#callout tasks --------------------------------------------------------------------------    
+    load_raw_to_gcs(extract()) >> create_bronze_table() >> create_silver_table()
 
 elt_gupy()

@@ -12,18 +12,133 @@ storage:
     bucket_uri: gs://elt_gupy_scrapper
 }
 
-BigQuery: {
-  bronze: {
-    table_name: blackstone-446301.elt_gupy_scrapper.bronze_dataset_gupy,
-    columns:
-    
-  },
+BigQuery: 
+  bronze:
+    table_name: "blackstone-446301.elt_gupy_scrapper.gupy_jobs_bronze"
 
-  silver: {
+  silver:
+    table_name: "blackstone-446301.elt_gupy_scrapper.gupy_jobs_silver"
+    query: |
+      CREATE OR REPLACE TABLE `blackstone-446301.elt_gupy_scrapper.gupy_jobs_silver` AS
 
-  },
+      -- Mapeamento de Abreviação de Estados
+      WITH state_mapping AS (
+        SELECT 'acre' AS state_name, 'AC' AS state_abbreviation UNION ALL
+        SELECT 'alagoas', 'AL' UNION ALL
+        SELECT 'amapá', 'AP' UNION ALL
+        SELECT 'amazonas', 'AM' UNION ALL
+        SELECT 'bahia', 'BA' UNION ALL
+        SELECT 'ceará', 'CE' UNION ALL
+        SELECT 'distrito federal', 'DF' UNION ALL
+        SELECT 'espírito santo', 'ES' UNION ALL
+        SELECT 'goiás', 'GO' UNION ALL
+        SELECT 'maranhão', 'MA' UNION ALL
+        SELECT 'mato grosso', 'MT' UNION ALL
+        SELECT 'mato grosso do sul', 'MS' UNION ALL
+        SELECT 'minas gerais', 'MG' UNION ALL
+        SELECT 'pará', 'PA' UNION ALL
+        SELECT 'paraíba', 'PB' UNION ALL
+        SELECT 'paraná', 'PR' UNION ALL
+        SELECT 'pernambuco', 'PE' UNION ALL
+        SELECT 'piauí', 'PI' UNION ALL
+        SELECT 'rio de janeiro', 'RJ' UNION ALL
+        SELECT 'rio grande do norte', 'RN' UNION ALL
+        SELECT 'rio grande do sul', 'RS' UNION ALL
+        SELECT 'rondônia', 'RO' UNION ALL
+        SELECT 'roraima', 'RR' UNION ALL
+        SELECT 'santa catarina', 'SC' UNION ALL
+        SELECT 'são paulo', 'SP' UNION ALL
+        SELECT 'sergipe', 'SE' UNION ALL
+        SELECT 'tocantins', 'TO'
+      ),
+      
+      -- Mapeamento de Categorias de Emprego
+      job_category_mapping AS (
+         -- TI & Desenvolvimento
+        SELECT 'developer' AS keyword, 'TI & Desenvolvimento' AS job_category UNION ALL
+        SELECT 'desenvolvedor', 'TI & Desenvolvimento' UNION ALL
+        SELECT 'programador', 'TI & Desenvolvimento' UNION ALL
+        SELECT 'engenheiro de software', 'TI & Desenvolvimento' UNION ALL
+        SELECT 'software engineer', 'TI & Desenvolvimento' UNION ALL
+        SELECT 'full stack', 'TI & Desenvolvimento' UNION ALL
+        SELECT 'front-end', 'TI & Desenvolvimento' UNION ALL
+        SELECT 'back-end', 'TI & Desenvolvimento' UNION ALL
+        SELECT 'cloud', 'TI & Desenvolvimento' UNION ALL
+        SELECT 'devops', 'TI & Desenvolvimento' UNION ALL
 
-  gold: {
-    
-  }
-}
+        -- Dados & Inteligência Artificial
+        SELECT 'dados', 'Dados & IA' UNION ALL
+        SELECT 'cientista de dados', 'Dados & IA' UNION ALL
+        SELECT 'engenheiro de dados', 'Dados & IA' UNION ALL
+        SELECT 'analista de dados', 'Dados & IA' UNION ALL
+        SELECT 'machine learning', 'Dados & IA' UNION ALL
+        SELECT 'big data', 'Dados & IA' UNION ALL
+        SELECT 'inteligência artificial', 'Dados & IA' UNION ALL
+
+        -- Administração & Financeiro
+        SELECT 'administrador', 'Administração & Financeiro' UNION ALL
+        SELECT 'contabilidade', 'Administração & Financeiro' UNION ALL
+        SELECT 'financeiro', 'Administração & Financeiro' UNION ALL
+        SELECT 'gestão', 'Administração & Financeiro' UNION ALL
+        SELECT 'analista financeiro', 'Administração & Financeiro' UNION ALL
+        SELECT 'controladoria', 'Administração & Financeiro' UNION ALL
+
+        -- Vendas & Comercial
+        SELECT 'vendas', 'Vendas & Comercial' UNION ALL
+        SELECT 'comercial', 'Vendas & Comercial' UNION ALL
+        SELECT 'representante de vendas', 'Vendas & Comercial' UNION ALL
+        SELECT 'executivo de contas', 'Vendas & Comercial' UNION ALL
+        SELECT 'customer success', 'Vendas & Comercial' UNION ALL
+        SELECT 'key account', 'Vendas & Comercial' UNION ALL
+
+        -- Atendimento & Suporte
+        SELECT 'suporte', 'Atendimento & Suporte' UNION ALL
+        SELECT 'atendimento', 'Atendimento & Suporte' UNION ALL
+        SELECT 'help desk', 'Atendimento & Suporte' UNION ALL
+        SELECT 'suporte técnico', 'Atendimento & Suporte' UNION ALL
+
+        -- Marketing & Publicidade
+        SELECT 'marketing', 'Marketing & Publicidade' UNION ALL
+        SELECT 'mídias sociais', 'Marketing & Publicidade' UNION ALL
+        SELECT 'growth', 'Marketing & Publicidade' UNION ALL
+        SELECT 'publicidade', 'Marketing & Publicidade' UNION ALL
+        SELECT 'SEO', 'Marketing & Publicidade' UNION ALL
+
+        -- Recursos Humanos
+        SELECT 'rh', 'Recursos Humanos' UNION ALL
+        SELECT 'recrutamento', 'Recursos Humanos' UNION ALL
+        SELECT 'talentos', 'Recursos Humanos' UNION ALL
+        SELECT 'gestão de pessoas', 'Recursos Humanos' UNION ALL
+
+        -- Engenharia & Manutenção
+        SELECT 'engenheiro', 'Engenharia & Manutenção' UNION ALL
+        SELECT 'técnico', 'Engenharia & Manutenção' UNION ALL
+        SELECT 'manutenção', 'Engenharia & Manutenção' UNION ALL
+        SELECT 'elétrica', 'Engenharia & Manutenção' UNION ALL
+        SELECT 'mecânica', 'Engenharia & Manutenção' UNION ALL
+
+        -- Saúde & Medicina
+        SELECT 'enfermeiro', 'Saúde & Medicina' UNION ALL
+        SELECT 'médico', 'Saúde & Medicina' UNION ALL
+        SELECT 'fisioterapeuta', 'Saúde & Medicina' UNION ALL
+        SELECT 'psicólogo', 'Saúde & Medicina' UNION ALL
+
+        -- Educação
+        SELECT 'professor', 'Educação' UNION ALL
+        SELECT 'pedagogo', 'Educação' UNION ALL
+        SELECT 'instrutor', 'Educação' UNION ALL
+        SELECT 'educação', 'Educação'
+      )
+
+      SELECT a.*,
+          COALESCE(c.job_category, 'Outros') AS job_category,
+          COALESCE(b.state_abbreviation, 'N/A') AS state_abbreviation
+      FROM `blackstone-446301.elt_gupy_scrapper.gupy_jobs_bronze` AS a
+      LEFT JOIN state_mapping AS b
+        ON LOWER(a.state) = LOWER(b.state_name)
+      LEFT JOIN job_category_mapping AS c
+        ON LOWER(a.name) LIKE CONCAT('%', LOWER(c.keyword), '%');
+
+  
+
+  gold:
