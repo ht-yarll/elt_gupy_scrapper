@@ -78,7 +78,7 @@ def elt_gupy():
 
     @task
     def load_raw_to_gcs(local_file: str) -> None:
-        # Load data to GCS
+        # Load data .json to GCS
         if not local_file:
             print("No file to upload.")
             return
@@ -96,6 +96,12 @@ def elt_gupy():
             print(f"File {local_file} uploaded to {bucket_name}/{destination_blob_name}.")
         except Exception as e:
             print(f"Error uploading file {local_file}: {e}")
+
+    @task
+    def create_table_bronze() -> None:
+        # Create table in BigQuery
+        ...
+        
     
     load_raw_to_gcs(extract())
 
