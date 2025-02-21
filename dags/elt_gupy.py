@@ -1,19 +1,22 @@
 """
 This dag scrape data from an URL and load it to a bucket on storage for further transformation
 """
-# from utils.load_config import load_config
+from utils.load_config import load_config
 from typing import List, Dict, Any
 import json
 
 from airflow import Dataset
 from airflow.decorators import dag, task
 from airflow.providers.google.cloud.sensors.gcs import GCSObjectExistenceSensor
+from airflow.providers.google.cloud.transfers.local_to_gcs import LocalFilesystemToGCSOperator
 from airflow.providers.google.cloud.transfers.gcs_to_bigquery import GCSToBigQueryOperator
+
+from google.cloud import storage
 
 import requests
 from datetime import datetime
 
-# config = load_config()
+config = load_config()
 
 default_args = {
     "owner": "astro",
@@ -39,7 +42,7 @@ def elt_gupy():
 
         offset = 0
         all_data = []
-        label = 'python'
+        label = config['labels']
         print(f'Fetching data for {label}...')
 
         try:
@@ -61,52 +64,39 @@ def elt_gupy():
 
             result = all_data
 
-            try:
-                output_file = './all_data.json'
-                with open(output_file, 'w', encoding='utf-8') as f:
-                    json.dump(all_data, f, ensure_ascii=False, indent=4)
-                    print(f'All data fetched successfully and saved to {output_file}')
-            except IOError as e:
-                print(f'Failed to save data to file: {e}')
+            local_file = f"/tmp/all_jobs.json"
+            with open(local_file, "w", encoding="utf-8") as f:
+                json.dump(all_data, f, ensure_ascii=False, indent=4)
 
-            return result
+            return local_file
            
         except Exception as e:
             print(f'Failed to fetch data: {e}')
             return []
+
+
+
+    @task
+    def load_raw_to_gcs(local_file: str) -> None:
+        # Load data to GCS
+        if not local_file:
+            print("No file to upload.")
+            return
+        
+        bucket_name = config['storage']['bucket_name']
+        destination_blob_name = "all_jobs.json"
+
+        try:
+            storage_client = storage.Client()
+            bucket = storage_client.bucket(bucket_name)
+            blob = bucket.blob(destination_blob_name)
+
+            blob.upload_from_filename(local_file)
+
+            print(f"File {local_file} uploaded to {bucket_name}/{destination_blob_name}.")
+        except Exception as e:
+            print(f"Error uploading file {local_file}: {e}")
     
-    @task
-    def check_if_file_exists():
-        # task to check if exist file in bkt
-        check_file = GCSObjectExistenceSensor(
-            task_id='check_file_exists',
-            bucket='elt_gupy_scrapper',  # Replace with your bucket name
-            object='all_data.json',  # Replace with the file path in the bucket
-            timeout=300,  # Maximum wait time in seconds
-            poke_interval=30,  # Time interval in seconds to check again
-            mode='poke',  # Use 'poke' mode for synchronous checking
-        )
-
-    @task
-    def upload_file_to_gcs():
-        # task to upload file to bq
-        upload_file = GCSToBigQueryOperator(
-                task_id='load_parquet_to_bq',
-                bucket='elt_gupy_scrapper',  # Replace with your bucket name
-                source_objects=['all_data.json'],  # Path to your file in the bucket
-                destination_project_dataset_table='blackstone-446301.elt_gupy_scrapper.all_data_raw',  # Replace with your project, dataset, and table name
-                source_format='NEWLINE_DELIMITED_JSON', 
-                allow_jagged_rows=True,
-                ignore_unknown_values=True,
-                write_disposition='WRITE_APPEND',  # Options: WRITE_TRUNCATE, WRITE_APPEND, WRITE_EMPTY
-                skip_leading_rows=1,  # Skip header row
-                autodetect=True,  # Automatically infer schema from the file
-                #google_cloud_storage_conn_id='google_cloud_default',  # Uncomment and replace if custom GCP connection
-                #bigquery_conn_id='google_cloud_default',  # Uncomment and replace if custom BigQuery connection
-           
-        )
-
-
-    extract() >> check_if_file_exists() >> upload_file_to_gcs()
+    load_raw_to_gcs(extract())
 
 elt_gupy()
