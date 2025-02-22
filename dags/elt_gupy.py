@@ -105,12 +105,12 @@ def elt_gupy():
 
 
     @task
-    def create_bronze_table() -> None:
+    def set_stage_table() -> None:
         """
         Create a stage table from raw data loaded to gcs in BigQuery
         """
         uri = f"{config['storage']['bucket_uri']}/all_jobs.json"
-        table_name = config['BigQuery']['bronze']['table_name']
+        table_name = config['BigQuery']['stage']['table_name']
         job_config = bigquery.LoadJobConfig(
                     source_format = bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
                     autodetect = True,
@@ -132,11 +132,11 @@ def elt_gupy():
 
 #TRANSFORM --------------------------------------------------------------------------
     @task
-    def create_silver_table() -> None:
+    def create_bronze_table() -> None:
         try:
             bq_client = bigquery.Client()
             load_job = bq_client.query(
-                query = config['BigQuery']['silver']['query']
+                query = config['BigQuery']['bronze']['query']
             )
 
             load_job.result()
@@ -145,6 +145,6 @@ def elt_gupy():
             print (f"Error during query: {(e)}")
         
 #callout tasks --------------------------------------------------------------------------    
-    load_raw_to_gcs(extract()) >> create_bronze_table() >> create_silver_table()
+    load_raw_to_gcs(extract()) >> set_stage_table() >> create_bronze_table()
 
 elt_gupy()
