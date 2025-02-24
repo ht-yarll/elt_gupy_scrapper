@@ -7,6 +7,7 @@ import json
 
 from airflow import Dataset
 from airflow.decorators import dag, task
+from airflow.utils.task_group import TaskGroup
 from airflow.providers.google.cloud.sensors.gcs import GCSObjectExistenceSensor
 from airflow.providers.google.cloud.transfers.local_to_gcs import LocalFilesystemToGCSOperator
 from airflow.providers.google.cloud.transfers.gcs_to_bigquery import GCSToBigQueryOperator
@@ -143,8 +144,53 @@ def elt_gupy():
 
         except Exception as e:
             print (f"Error during query: {(e)}")
-        
-#callout tasks --------------------------------------------------------------------------    
-    load_raw_to_gcs(extract()) >> set_stage_table() >> create_bronze_table()
+    
+    bq_client = bigquery.Client()
+    @task
+    def create_silver_locations() -> None:
+        try:
+            load_job_location = bq_client.query(
+                query = config['BigQuery']['silver']['gupy_jobs_location']['query']
+            )
 
+            load_job_location.result()
+
+        except Exception as e:
+            print (f"Error during query: {(e)}")
+
+    @task
+    def create_silver_jobs() -> None:
+        try:   
+            load_job_jobs = bq_client.query(
+                query = config['BigQuery']['silver']['gupy_jobs_jobs']['query']
+            )
+
+            load_job_jobs.result()
+
+        except Exception as e:
+            print (f"Error during query: {(e)}")
+    @task
+    def create_silver_company_and_time() -> None:
+        try:
+            load_job_company_and_time = bq_client.query(
+                query = config['BigQuery']['silver']['gupy_jobs_company_and_time']['query']
+            )
+
+            load_job_company_and_time.result()
+
+        except Exception as e:
+            print (f"Error during query: {(e)}")
+
+    with TaskGroup("silver_tables") as silver_tables:
+        create_silver_locations()
+        create_silver_jobs()
+        create_silver_company_and_time()
+
+    @task
+    def create_gold_for_data_analysis() -> None:
+    
+
+
+#callout tasks --------------------------------------------------------------------------    
+    load_raw_to_gcs(extract()) >> set_stage_table() >> create_bronze_table() >> silver_tables
 elt_gupy()

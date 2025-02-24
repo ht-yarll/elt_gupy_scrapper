@@ -194,13 +194,55 @@ BigQuery:
         ON LOWER(a.type) = LOWER(d.vacancy_key);
 
   silver:
-    gupy_jobs_state:
-      table_name: "blackstone-446301.elt_gupy_scrapper.gupy_jobs_silver"
+    gupy_jobs_location:
+      table_name: "blackstone-446301.elt_gupy_scrapper.gupy_jobs_location_silver"
       query: |
-        CREATE OR REPLACE TABLE `blackstone-446301.elt_gupy_scrapper.gupy_jobs_silver` AS
+        CREATE OR REPLACE TABLE `blackstone-446301.elt_gupy_scrapper.gupy_jobs_location_silver` AS
         SELECT
-        ...
-      
+        id AS job_id, 
+        country,
+        state,
+        state_abbreviation,
+        city
+
+        FROM `blackstone-446301.elt_gupy_scrapper.gupy_jobs_bronze`;
+
+    gupy_jobs_jobs:
+      table_name: "blackstone-446301.elt_gupy_scrapper.gupy_jobs_jobs_silver"
+      query: |
+        CREATE OR REPLACE TABLE `blackstone-446301.elt_gupy_scrapper.gupy_jobs_jobs_silver` AS
+        SELECT
+        id AS job_id,
+        job_category,
+        vacancy_type,
+        CASE 
+            WHEN LOWER(workplaceType) = 'hybrid' THEN 'Híbrido'
+            WHEN LOWER(workplaceType) = 'remote' THEN 'Remoto'
+            WHEN LOWER(workplaceType) = 'on-site' THEN 'Presencial'
+            ELSE 'Desconhecido' 
+        END AS workplace_type,
+        disabilities
+
+        FROM `blackstone-446301.elt_gupy_scrapper.gupy_jobs_bronze`;
+    
+    gupy_jobs_company_and_time:
+      table_name: "blackstone-446301.elt_gupy_scrapper.gupy_jobs_company_and_time_silver"
+      query: |
+        CREATE OR REPLACE TABLE `blackstone-446301.elt_gupy_scrapper.gupy_jobs_company_and_time_silver` AS
+        SELECT
+        id AS job_id,
+        companyId AS company_id,
+        careerPageName AS company_name,
+        LOWER(name) AS job_title,
+        FORMAT_DATE('%Y/%m/%d', DATE(publishedDate)) AS published_date,
+        FORMAT_DATE('%Y/%m/%d', DATE(applicationDeadline)) AS application_dead_line,
+        DATE_DIFF(IFNULL(DATE(applicationDeadline), CURRENT_DATE()), DATE(publishedDate), DAY) AS days_for_application
+        
+        FROM `blackstone-446301.elt_gupy_scrapper.gupy_jobs_bronze`;
+
     
 
   gold:
+    table_name: "blackstone-446301.elt_gupy_scrapper.gupy_jobs_gold_for_analysis"
+    query: |
+      CREATE OR REPLACE TABLE `blackstone-446301.elt_gupy_scrapper.gupy_jobs_gold_for_analysis` AS
