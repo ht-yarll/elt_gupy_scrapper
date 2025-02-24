@@ -2,8 +2,33 @@ project_name: "blackstone"
 project_directory: "elt_gupy_scrapper"
 dataset_id: blackstone-446301.elt_gupy_scrapper
 
-labels: 
-  - "python"
+labels:
+    - engenharia de software
+    - analista de dados
+    - cientista de dados
+    - engenheiro de dados
+    - desenvolvedor frontend
+    - médico
+    - enfermeiro
+    - técnico de enfermagem
+    - fisioterapeuta
+    - farmacêutico
+    - gerente de marketing
+    - analista de marketing digital
+    - coordenador de marketing
+    - especialista em SEO
+    - designer gráfico
+    - engenheiro civil
+    - engenheiro elétrico
+    - engenheiro mecânico
+    - engenheiro ambiental
+    - engenheiro de produção
+    - analista de recursos humanos
+    - coordenador de RH
+    - gerente de RH
+    - especialista em recrutamento
+    - consultor de RH
+
 
 
 storage:

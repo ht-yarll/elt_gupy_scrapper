@@ -1,12 +1,14 @@
 """
 This dag scrape data from an URL and load it to a bucket on storage for further transformation
 """
+import os
+
 from utils.load_config import config
 from typing import List, Dict, Any
 import json
 
 from airflow import Dataset
-from airflow.decorators import dag, task
+from airflow.decorators import dag, task, task_group
 from airflow.utils.task_group import TaskGroup
 from airflow.providers.google.cloud.sensors.gcs import GCSObjectExistenceSensor
 from airflow.providers.google.cloud.transfers.local_to_gcs import LocalFilesystemToGCSOperator
@@ -40,14 +42,14 @@ def elt_gupy():
 
 #EXTRACT ----------------------------------------------------------------------------
     @task
-    def extract() -> List[Dict[str, Any]]:
+    def extract(label: str) -> str:
         """
         Extract jobs list from a Gupy URL and parse it to json
         """
 
         offset = 0
         all_data = []
-        label = config['labels']
+
         print(f'Fetching data for {label}...')
 
         try:
@@ -66,16 +68,44 @@ def elt_gupy():
                 all_data.extend(data['data'])
                 offset += 10
 
-            local_file = f"/tmp/all_jobs.json"
-            with open(local_file, "w", encoding="utf-8") as f:
-                for job in all_data:
-                    f.write(json.dumps(job, ensure_ascii=False) + "\n")
-
-            return local_file
-           
         except Exception as e:
             print(f'Failed to fetch data: {e}')
-            return ""
+        
+        return all_data
+    
+    @task
+    def merge_and_save(data_batches: List[List[dict]]) -> str:
+        """
+        Merge data from multiple labes, remove duplicates and saves in a single file  
+        """
+
+        local_file = '/tmp/all_jobs.json'
+        existing_ids = set()
+        merged_data = []
+
+        if os.path.exists(local_file):
+            with open(local_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    job = json.loads(line.strip())
+                    existing_ids.add(job.get("id"))
+        
+        for batch in data_batches:
+            for job in batch:
+                if job.get('id') not in existing_ids:
+                    merged_data.append(job)
+                    existing_ids.add(job.get("id"))
+        
+        with open(local_file, "a", encoding="utf-8") as f:
+            for job in merged_data:
+                f.write(json.dumps(job, ensure_ascii=False) + "\n")
+
+        print(f'Saved {len(merged_data)} jobs to {local_file}')
+        
+    @task_group
+    def extract_all_labels():
+        labels = config['labels']
+        extract_task = [extract(label) for label in labels]
+        return merge_and_save(extract_task)
 
 
 #LOAD --------------------------------------------------------------------------
@@ -197,7 +227,7 @@ def elt_gupy():
 
 
 #callout tasks --------------------------------------------------------------------------    
-    raw_data = extract()
+    raw_data = extract_all_labels()
     data_to_gcs = load_raw_to_gcs(raw_data)
 
     data_to_gcs >> set_stage_table() >> create_bronze_table() >> silver_tables >> create_gold_for_analysis()
