@@ -181,16 +181,26 @@ def elt_gupy():
         except Exception as e:
             print (f"Error during query: {(e)}")
 
+    @task
+    def create_gold_for_analysis() -> None:
+        load_job_gold = bq_client.query(
+            query = config['BigQuery']['gold']['query']
+        )
+
+        load_job_gold.result()
+
     with TaskGroup("silver_tables") as silver_tables:
         create_silver_locations()
         create_silver_jobs()
         create_silver_company_and_time()
-
-    @task
-    def create_gold_for_data_analysis() -> None:
     
 
 
 #callout tasks --------------------------------------------------------------------------    
-    load_raw_to_gcs(extract()) >> set_stage_table() >> create_bronze_table() >> silver_tables
+    raw_data = extract()
+    data_to_gcs = load_raw_to_gcs(raw_data)
+
+    data_to_gcs >> set_stage_table() >> create_bronze_table() >> silver_tables >> create_gold_for_analysis()
+        
+
 elt_gupy()

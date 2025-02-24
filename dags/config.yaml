@@ -246,3 +246,13 @@ BigQuery:
     table_name: "blackstone-446301.elt_gupy_scrapper.gupy_jobs_gold_for_analysis"
     query: |
       CREATE OR REPLACE TABLE `blackstone-446301.elt_gupy_scrapper.gupy_jobs_gold_for_analysis` AS
+      SELECT
+      a.*,
+      b.* EXCEPT(job_id),
+      c.* EXCEPT(city, job_id)
+
+      FROM `blackstone-446301.elt_gupy_scrapper.gupy_jobs_jobs_silver` AS a
+      LEFT JOIN `blackstone-446301.elt_gupy_scrapper.gupy_jobs_company_and_time_silver` AS b
+        ON a.job_id = b.job_id
+      LEFT JOIN `blackstone-446301.elt_gupy_scrapper.gupy_jobs_location_silver` AS c
+        ON a.job_id = c.job_id;
