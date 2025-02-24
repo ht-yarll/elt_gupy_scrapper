@@ -183,14 +183,15 @@ BigQuery:
 
       SELECT a.*,
           COALESCE(c.job_category, 'Outros') AS job_category,
-          COALESCE(b.state_abbreviation, 'N/A') AS state_abbreviation
+          COALESCE(b.state_abbreviation, 'N/A') AS state_abbreviation,
+          COALESCE(d.vacancy_type, 'Desconhecido') AS vacancy_type
       FROM `blackstone-446301.elt_gupy_scrapper.gupy_jobs_stage` AS a
       LEFT JOIN state_mapping AS b
         ON LOWER(a.state) = LOWER(b.state_name)
       LEFT JOIN job_category_mapping AS c
         ON LOWER(a.name) LIKE CONCAT('%', LOWER(c.keyword), '%')
       LEFT JOIN vacancy_type_mapping AS d
-        ON a.type = d.vacancy_key;
+        ON LOWER(a.type) = LOWER(d.vacancy_key);
 
   silver:
     gupy_jobs_state:
