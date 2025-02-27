@@ -217,6 +217,8 @@ BigQuery:
         ON LOWER(a.name) LIKE CONCAT('%', LOWER(c.keyword), '%')
       LEFT JOIN vacancy_type_mapping AS d
         ON LOWER(a.type) = LOWER(d.vacancy_key);
+    drop_query: |
+      DROP TABLE `blackstone-446301.elt_gupy_scrapper.gupy_jobs_stage`;
 
   silver:
     gupy_jobs_location:

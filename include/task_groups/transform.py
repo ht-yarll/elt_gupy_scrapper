@@ -14,11 +14,22 @@ class TransformData(TaskGroup):
         @task(task_group = self)
         def create_bronze_table() -> None:
             try:
-                load_job = bq_client.query(
+                load_job_create = bq_client.query(
                     query = config['BigQuery']['bronze']['query']
                 )
 
-                load_job.result()
+                load_job_drop = bq_client.query(
+                    query = config['BigQuery']['bronze']['drop_query']
+                )
+
+                load_job_create.result()
+                print("Table created successfully.")
+                try:
+                    load_job_drop.result()
+                    print("Table dropped successfully.")
+
+                except Exception as e:
+                    print (f"Error during drop: {(e)}")  
 
             except Exception as e:
                 print (f"Error during query: {(e)}")
@@ -32,6 +43,7 @@ class TransformData(TaskGroup):
                 )
 
                 load_job_location.result()
+                print('location table created successfully')
 
             except Exception as e:
                 print (f"Error during query: {(e)}")
@@ -45,6 +57,7 @@ class TransformData(TaskGroup):
                 )
 
                 load_job_jobs.result()
+                print('jobs table created successfully')
 
             except Exception as e:
                 print (f"Error during query: {(e)}")
@@ -58,6 +71,7 @@ class TransformData(TaskGroup):
                 )
 
                 load_job_company_and_time.result()
+                print('company_and_time table created successfully')
 
             except Exception as e:
                 print (f"Error during query: {(e)}")
@@ -71,6 +85,7 @@ class TransformData(TaskGroup):
                 )
 
                 load_job_gold.result()
+                print('gold table created successfully')
 
             except Exception as e:
                 print (f"Error during query: {(e)}")

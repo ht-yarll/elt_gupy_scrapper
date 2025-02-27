@@ -33,7 +33,6 @@ class LoadData(TaskGroup):
                 blob = bucket.blob(destination_blob_name)
 
                 blob.upload_from_filename(local_file)
-
                 print(f"File {local_file} uploaded to {bucket_name}/{destination_blob_name}.")
 
             except Exception as e:
@@ -62,6 +61,7 @@ class LoadData(TaskGroup):
                 )
 
                 load_job.result()
+                print('stage table ready to query')
 
             except Exception as e:
                 print(f"Error creating table: {e}")

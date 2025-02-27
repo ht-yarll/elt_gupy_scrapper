@@ -46,6 +46,7 @@ class ExtractData(TaskGroup):
             except Exception as e:
                 print(f'Failed to fetch data: {e}')
             
+            print(f'Fetched {len(all_data)} jobs data')
             return all_data
         
         @task(task_group=self)
