@@ -1,6 +1,7 @@
 project_name: "blackstone"
 project_directory: "elt_gupy_scrapper"
 dataset_id: blackstone-446301.elt_gupy_scrapper
+local_file: "/tmp/all_jobs.json"
 
 labels:
     - engenharia de software
@@ -28,7 +29,6 @@ labels:
     - gerente de RH
     - especialista em recrutamento
     - consultor de RH
-
 
 
 storage:
